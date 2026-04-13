@@ -615,7 +615,7 @@ Reconstructed Close price series from `sim_return` for each simulated world, sca
 
 ---
 
-### 13. Realistic Close Price Generation sliced rows sample from 323,400 Virtual Days
+### 12. Realistic Close Price Generation sliced rows sample from 323,400 Virtual Days
 
 From the full library of 50 worlds × 6,468 days = **323,400 simulated virtual trading days**, a representative sliced-days sample is drawn for visualisation:
 
@@ -674,20 +674,3 @@ SimulatedWorlds/
 | Visualisation | `matplotlib`, `seaborn` |
 
 ---
-
-## Key Design Decisions
-
-**Why `merge_asof` with `direction='backward'` for macro data?**
-FRED publishes economic indicators with delays (GDP: ~4 weeks). Using the observation date directly would introduce look-ahead bias. `merge_asof` backward-fills each trading day with the most recently *published* value, matching what a real-world practitioner would actually have known on that day.
-
-**Why a 5-variable HMM observation space?**
-The five state variables (`log_ret`, `realized_vol`, `VIX_level`, `VIX_change`, `vol_z`) each add an independent dimension of market state: return shock, lagged volatility level, fear level, fear dynamics, and volume anomaly. Using all five gives the HMM enough signal to correctly separate the three regimes while using lagged transforms prevents any within-state look-ahead.
-
-**Why separate copula fits per regime?**
-Factor correlations change dramatically between calm and stress (e.g., equity-VIX correlation flips sign in crisis). A single global copula would produce a blended correlation structure that matches neither regime correctly. Per-regime fitting allows the simulation to accurately represent both "normal market" and "crisis" dependence structures.
-
-**Why df=8 for the Student-t noise?**
-Student-t with df=5 (original choice) produced tails ~35% wider than real data and volatility ~30% above target. df=8 reduces kurtosis from 6 to 1.5, bringing tails within ~12% of real data while still capturing the excess kurtosis that Gaussian noise cannot represent.
-
-**Why GARCH-lite on top of the β model?**
-The AR(1) on returns captures mean-reversion. But financial returns also exhibit volatility clustering — large shocks follow large shocks. GARCH-lite adds this: `α=0.05` makes today's variance sensitive to yesterday's shock; `β_g=0.90` makes elevated variance persistent. Together they recover the serial structure (Ljung-Box statistics) that pure AR(1) with fixed noise cannot replicate.
